@@ -10,7 +10,7 @@ np.random.seed(42)
 # Starter code for exercise 7: Neural Network for Argument Quality
 ##################################################################
 
-GROUP = "XX"  # TODO: write in your group number
+GROUP = "6"  # TODO: write in your group number
 
 # From last exercise sheet
 def load_feature_vectors(filename: str) -> np.array:
@@ -46,7 +46,16 @@ def encode_class_values(cs: list[str], class_index: dict[str, int]) -> np.array:
     Returns:
     - an array of shape (n, k) containing n column vectors with k elements each.
     """
-    # TODO (a): Your code here
+    n = len(cs)
+    k = len(class_index)
+
+    encoded_array = np.zeros((n, k), dtype=int)
+
+    for i, value in enumerate(cs):
+        index = class_index[value]
+        encoded_array[i, index] = 1
+
+    return encoded_array
 
 
 def misclassification_rate(cs: np.array, ys: np.array) -> float:
