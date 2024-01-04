@@ -109,7 +109,13 @@ def predict_probabilities(W_h: np.array, W_o: np.array, xs: np.array) -> np.arra
     - The probabilities for each of the k classes for each of the n examples as
       a two-dimensional numpy array with shape (n, k)
     """
-    # TODO (b): Your code here
+
+    # Forward propagation through the neural network
+    hidden_output = sigmoid(np.dot(xs, W_h.T))
+    hidden_output_with_bias = np.hstack((np.ones((hidden_output.shape[0], 1)), hidden_output))
+    output = sigmoid(np.dot(hidden_output_with_bias, W_o.T))
+
+    return output
 
 
 def predict(W_h: np.array, W_o: np.array, xs: np.array) -> np.array:
@@ -125,7 +131,10 @@ def predict(W_h: np.array, W_o: np.array, xs: np.array) -> np.array:
     Returns:
     - The predicted class for each of the n examples as an array of length n
     """
-    # TODO (c): Your code here
+    probabilities = predict_probabilities(W_h, W_o, xs)
+    predicted_classes = np.argmax(probabilities, axis=1)
+
+    return predicted_classes
 
 
 # From code linked on lecture slide
@@ -163,7 +172,27 @@ def train_multilayer_perceptron(xs: np.array, cs: np.array, l: int, eta: float=0
             x = np.reshape(xs[i], (len(xs[i]), 1))
             c = cs[i].reshape(k, 1)
     
-            # TODO (d): Your code here
+            y_h = np.vstack([1, sigmoid(W_h @ x)])
+            y = sigmoid(W_o @ y_h)
+
+            ## (6) Calculation of residual vector
+            delta = c - y
+
+            ## (7a) Backpropagation
+            delta_o = delta * y * (1 - y)
+            delta_h = ((W_o.T @ delta_o) * y_h * (1 - y_h))[1:]
+
+            ## (7b) Weight update
+            # note: with the dyadic product operator âŠ— as written in the pseudocode,
+            # the transpose of the second operand is implicit. Numpy uses the same
+            # @-operator for dyadic products as for matrix multiplications, so we
+            # have to transpose explicitly.
+            delta_W_h = eta * (delta_h @ x.T)
+            delta_W_o = eta * (delta_o @ y_h.T)
+
+            ## (8) Weight update (cont'd)
+            W_h += delta_W_h
+            W_o += delta_W_o
 
         models.append((W_h.copy(), W_o.copy()))
         train_misclassification_rates.append(misclassification_rate(cs[0:last_train_index,:], predict(W_h, W_o, xs[0:last_train_index,:])))
@@ -178,8 +207,8 @@ def plot_misclassification_rates(train_misclassification_rates: List[float], val
     """
     plt.plot(train_misclassification_rates, label="Misclassification rate (train)")
     plt.plot(validation_misclassification_rates, label="Misclassification rate (validation)")
-    plt.legend()
-    plt.show()
+    # plt.legend()
+    # plt.show()
 
 ########################################################################
 # Tests
@@ -309,7 +338,7 @@ if __name__ == "__main__":
     plot_misclassification_rates(train_misclassification_rates, validation_misclassification_rates)
 
     print("(e)")
-    best_model_index = -1 # TODO (e): replace -1 (last model) with your code
+    best_model_index = np.argmin(validation_misclassification_rates)
     print("Minimal misclassification rate on validation set (index " + str(best_model_index) + "): " + str(validation_misclassification_rates[best_model_index]))
     W_h, W_o = models[best_model_index]
     y_test = predict(W_h, W_o, xs_test)
